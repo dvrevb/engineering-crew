@@ -27,6 +27,7 @@ Output is written to a project folder named after the application (e.g. `TraderS
 
 - Python `>= 3.10, < 3.14`
 - [uv](https://docs.astral.sh/uv/)
+- [CrewAI](https://crewai.com) — agent orchestration framework
 
 ---
 
