@@ -1,17 +1,295 @@
-research_task:
+design_architecture:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
-  expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    Analyze the following requirements and design a complete software system.
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    Requirements:
+    {requirements}
+
+    Your output MUST include all of the following sections:
+    1. Architecture Overview - pattern chosen (monolith, layered, microservices, etc.) and reasoning
+    2. Technology Decisions - language(s), frameworks, libraries with justification
+    3. Project Structure - full file/module breakdown with folder tree
+    4. Component Responsibilities - what each module/class/service does
+    5. API / Interface Definitions - all endpoints, method signatures, and DTOs
+    6. Task Breakdown - explicit list of tasks for Backend Engineer, Frontend Engineer, and Test Engineer
+
+    PROJECT NAMING RULE:
+    Derive a short descriptive project name from the requirements.
+    Examples: TradingApp, SnakeGame, TaskManager, ChatBot, InventorySystem
+    All files MUST be created inside this named root folder.
+    The very first line of your architecture document MUST be:
+    PROJECT ROOT: <name>
+    Example: PROJECT ROOT: TradingApp
+
+    PROJECT STRUCTURE RULES:
+    - The project root is the named folder you derived from the requirements
+    - main.py MUST be directly inside the project root — never nested deeper
+    - Every package folder MUST contain an __init__.py file
+    - All imports in all files MUST be relative to the project root
+    - File and folder names MUST match the requirements domain — no generic names
+
+    CORRECT structure example for a trading app:
+    PROJECT ROOT: TradingApp
+    /TradingApp
+        main.py
+        /backend
+            __init__.py
+            /models
+                __init__.py
+                account.py
+                transaction.py
+            /services
+                __init__.py
+                account_service.py
+                portfolio_service.py
+            /controllers
+                __init__.py
+                account_controller.py
+        /frontend
+            __init__.py
+            app.py
+        /tests
+            __init__.py
+            test_account.py
+
+    CORRECT structure example for a snake game:
+    PROJECT ROOT: SnakeGame
+    /SnakeGame
+        main.py
+        /game
+            __init__.py
+            snake.py
+            board.py
+            food.py
+        /frontend
+            __init__.py
+            app.py
+        /tests
+            __init__.py
+            test_snake.py
+
+    MANDATORY FRONTEND REQUIREMENT:
+    You MUST always include a frontend in the architecture regardless of the requirements.
+    The frontend MUST be a Gradio 4.x application using gr.Blocks() — never gr.inputs.* or gr.outputs.*
+    The frontend MUST be at: <project_root>/frontend/app.py
+
+    The frontend/app.py MUST:
+    - Have one tab per major feature
+    - Cover every backend API endpoint defined in the architecture
+    - Include input fields and buttons for all backend operations
+    - Include an output area to display results and errors
+    - Use only Gradio 4.x syntax: gr.Textbox(), gr.Number(), gr.JSON(), gr.Button()
+
+    Never omit the frontend from the architecture. Never omit frontend tasks from the
+    Task Breakdown section. The Frontend Engineer depends entirely on your architecture
+    to know what files to create and where.
+
+    Be precise and complete. Downstream engineers will implement directly from your output.
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A structured architecture document where the very first line is PROJECT ROOT: <name>.
+    Must include a frontend section with at minimum <project_root>/frontend/app.py defined.
+    Must include frontend tasks in the Task Breakdown section.
+    Must include __init__.py in every package folder in the project structure.
+    All import examples must follow the project root convention.
+    Must be detailed enough for engineers to implement without asking follow-up questions.
+  agent: engineering_lead
+
+create_execution_plan:
+  description: >
+    Review the architecture document produced by the engineering lead.
+
+    Original requirements for reference:
+    {requirements}
+
+    Your responsibilities:
+    - Validate the architecture is complete and unambiguous
+    - Decide the execution order of engineers
+    - Determine if any role can be skipped (e.g., no frontend needed based on requirements)
+    - Produce a filtered task list for each role: backend, frontend (if needed), test
+    - Flag any gaps or ambiguities in the architecture before engineers begin
+
+    You do NOT write code or modify the architecture.
+  expected_output: >
+    An execution plan containing:
+    1. Validation summary - is the architecture ready to implement? Any gaps?
+    2. Roles active in this execution - which engineers are needed and why
+    3. Execution order - in what sequence should engineers work
+    4. Backend Engineer tasks - filtered, actionable task list
+    5. Frontend Engineer tasks - filtered task list
+    6. Test Engineer tasks - filtered, actionable task list
+  agent: engineering_manager
+  context:
+    - design_architecture
+
+implement_backend:
+  description: >
+    Implement all backend components based on:
+    - The architecture document from the engineering lead
+    - The backend task list assigned by the engineering manager
+
+    CRITICAL: You have access to FileWriterTool tool. You MUST use it to write each file
+    individually to disk. Do not output code in your response — write it to disk using
+    the tool only.
+
+    FIND THE PROJECT ROOT:
+    The architecture document starts with a line: PROJECT ROOT: <name>
+    Read that name first. Every file path you write MUST start with that name.
+    Example: if PROJECT ROOT: TradingApp then main.py goes to TradingApp/main.py
+
+    MANDATORY ENTRY POINT:
+    The very FIRST file you write MUST be main.py inside the project root folder.
+    main.py MUST:
+    - Import and register all blueprints or entry points defined in the architecture
+    - Include global error handlers if applicable
+    - Be runnable directly with: python main.py
+
+    VALIDATION RULES:
+    - Every service method that receives an object must check it is not None before use
+    - Every controller endpoint that looks up a resource must return 404 if not found
+    - Never pass None to a service method — always validate before calling
+    - All endpoints must have try/except with appropriate HTTP error responses
+    
+    FILE CREATION ORDER:
+    1. <project_root>/main.py                    ← always first
+    2. <project_root>/backend/__init__.py         ← or whatever the architecture defines
+    3. All other __init__.py files before any module that imports them
+    4. All model files
+    5. All service files
+    6. All controller files
+    7. Any remaining backend files
+
+    For each file:
+    1. Implement the full file content
+    2. Use FileWriterTool to write it to its exact path
+    3. Confirm the file was written
+    4. Move to the next file
+
+    Rules:
+    - Read the project root name from the architecture — never hardcode it
+    - Use ONLY paths defined in the architecture — do not invent new paths
+    - Output ALL files listed including all __init__.py files
+    - All imports must follow the convention defined in the architecture
+    - All content must be complete and runnable, not pseudocode or placeholders
+    - No markdown code fences in the written files
+  expected_output: >
+    A confirmation list of every backend file written to disk with its exact path.
+    The project root name must match what the architecture defined.
+    main.py inside the project root must be the first file confirmed.
+    Every __init__.py must be confirmed.
+    Every file from the backend section of the architecture must be accounted for.
+  agent: backend_engineer
+  context:
+    - design_architecture
+    - create_execution_plan
+
+
+implement_frontend:
+  description: >
+    Implement all frontend components based on:
+    - The architecture document from the engineering lead
+    - The frontend task list assigned by the engineering manager
+    - The backend implementation
+
+    CRITICAL: You have access to FileWriterTool tool. You MUST use it to write each file
+    individually to disk. Do not output code in your response — write it to disk using
+    the tool only.
+
+    FIND THE PROJECT ROOT:
+    The architecture document starts with a line: PROJECT ROOT: <name>
+    Read that name first. Every file path you write MUST start with that name.
+    Example: if PROJECT ROOT: TradingApp then frontend goes to TradingApp/frontend/app.py
+
+    MANDATORY FRONTEND:
+    You MUST always produce a frontend regardless of what the architecture or execution
+    plan says. A missing frontend is never acceptable.
+    If the architecture does not define a frontend, create it at:
+    <project_root>/frontend/app.py
+
+    GRADIO 4.x RULES — STRICTLY ENFORCED:
+    - NEVER use gr.inputs.* or gr.outputs.* — these were removed in Gradio 4
+    - NEVER use gr.Interface with string inputs/outputs like "text" or "number"
+    - ALWAYS use gr.Blocks() as the main app structure
+    - ALWAYS use components directly: gr.Textbox(), gr.Number(), gr.Button(), gr.JSON()
+    - ALWAYS use .click(fn=..., inputs=[...], outputs=[...]) for event handlers
+    - ALWAYS use gr.Tab() inside gr.Tabs() or gr.Blocks() for multiple sections
+    - Each tab MUST have its own input and output components — never share across tabs
+
+    CORRECT Gradio 4.x structure:
+    with gr.Blocks(title="App Name") as app:
+        with gr.Tab("Feature One"):
+            input_field = gr.Textbox(label="Input")
+            btn = gr.Button("Submit", variant="primary")
+            output = gr.JSON(label="Result")
+            btn.click(fn=api_function, inputs=[input_field], outputs=[output])
+        with gr.Tab("Feature Two"):
+            ...
+    app.launch()
+
+    API CONNECTION RULES:
+    - Read all backend API endpoints from the architecture document
+    - Use requests library to call backend endpoints
+    - Default backend URL: http://localhost:5000
+    - Every API call MUST be wrapped in try/except
+    - On error return a dict with an "error" key and the error message as value
+    - Never let an unhandled exception crash the UI
+
+    For each file defined in the architecture:
+    1. Implement the full file content
+    2. Use FileWriterTool to write it to its exact path from the architecture
+    3. Confirm the file was written
+    4. Move to the next file
+
+    Rules:
+    - Read the project root name from the architecture — never hardcode it
+    - Use ONLY paths defined in the architecture — do not invent new paths
+    - If no frontend paths exist in the architecture use <project_root>/frontend/app.py
+    - Consume backend APIs exactly as defined in the architecture — do not modify contracts
+    - All file content must be complete and runnable, not pseudocode or placeholders
+    - No markdown code fences in the written files
+  expected_output: >
+    A confirmation list of every frontend file written to disk with its exact path.
+    The project root name must match what the architecture defined.
+    Every file defined in the frontend section of the architecture must be accounted for.
+    If no frontend was defined in the architecture, confirmation that a Gradio 4.x UI
+    was written to <project_root>/frontend/app.py covering all core features.
+  agent: frontend_engineer
+  context:
+    - design_architecture
+    - create_execution_plan
+    - implement_backend
+
+
+write_tests:
+  description: >
+    Write tests for the system based on:
+    - The architecture document from the engineering lead
+    - The test task list assigned by the engineering manager
+    - The backend implementation
+
+    CRITICAL: You have access to FileWriterTool. You MUST use it to write each test file
+    individually to disk. Do not output code in your response — write it to disk using
+    the tool only.
+
+    For each test file defined in the architecture:
+    1. Implement the full test file content
+    2. Use FileWriterTool to write it to its exact path from the architecture
+    3. Confirm the file was written
+    4. Move to the next file
+
+    Rules:
+    - Use ONLY paths defined in the architecture — do not invent new paths
+    - Output ALL test files listed in the architecture
+    - Write both unit and integration tests where applicable
+    - Cover all critical logic paths and edge cases including failure scenarios
+    - Tests must align with defined interfaces — do not test implementation details
+    - All test content must be complete and runnable
+    - No markdown code fences in the written files
+  expected_output: >
+    A confirmation list of every test file written to disk with its exact path.
+    Every test file defined in the architecture must be accounted for, covering
+    happy paths and failure scenarios.
+  agent: test_engineer
+  context:
+    - design_architecture
+    - create_execution_plan
+    - implement_backend
